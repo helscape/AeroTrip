@@ -1,6 +1,13 @@
 # AeroTrip — Future Plan: Flight Search & Booking
 
-> **Status:** Proposal
+> **Status:** Implemented & extended (see [`README.md`](./README.md) for setup).
+> **Extensions beyond this plan:** user accounts with JWT auth, a guided
+> review/demo-payment step, help center, legal pages, toasts, cancel
+> confirmation dialog, and a full clickable airline-style UI.
+> **Implementation note:** the backend uses **MariaDB 11** (SQLAlchemy +
+> PyMySQL) instead of the SQLite file described below, using the database from
+> the existing Webserver Docker Compose stack. WAL-mode notes are therefore
+> not applicable.
 > **Goal:** Turn the current visual-only landing page into a working end-to-end
 > flight search and booking system with a real frontend and backend.
 > **Constraint:** Standard CRUD only. No cache layer, no queue, no microservices,

@@ -2,6 +2,7 @@ import { DestinationCard } from "@/components/DestinationCard";
 import { Container } from "@/components/ui/Container";
 import { SectionHeading } from "@/components/ui/SectionHeading";
 import { destinations } from "@/data/destinations";
+import { isoDatePlus } from "@/lib/format";
 
 export function PopularDestinations() {
   return (
@@ -9,14 +10,27 @@ export function PopularDestinations() {
       <Container>
         <SectionHeading
           eyebrow="Destinations"
-          title="Popular Destinations"
-          description="A few cities travellers keep coming back to."
+          title="Where to next?"
+          description="Tap a city to search live sample flights from Jakarta."
         />
 
         <div class="mt-12 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-          {destinations.map((destination) => (
-            <DestinationCard key={destination.id} destination={destination} />
-          ))}
+          {destinations.map((destination) => {
+            const query = new URLSearchParams({
+              origin: "CGK",
+              destination: destination.code,
+              departDate: isoDatePlus(14),
+              passengers: "1",
+              cabin: "economy",
+            });
+            return (
+              <DestinationCard
+                key={destination.id}
+                destination={destination}
+                href={`/search?${query.toString()}`}
+              />
+            );
+          })}
         </div>
       </Container>
     </section>

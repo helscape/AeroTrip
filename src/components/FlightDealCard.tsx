@@ -5,9 +5,10 @@ import type { FlightDeal } from "@/types";
 
 interface FlightDealCardProps {
   deal: FlightDeal;
+  href: string;
 }
 
-export function FlightDealCard({ deal }: FlightDealCardProps) {
+export function FlightDealCard({ deal, href }: FlightDealCardProps) {
   const {
     airline,
     airlineCode,
@@ -98,7 +99,7 @@ export function FlightDealCard({ deal }: FlightDealCardProps) {
           </p>
         </div>
 
-        <Button variant="outline" size="sm" href="#" class="group-hover:border-navy-300">
+        <Button variant="outline" size="sm" href={href} class="group-hover:border-navy-300">
           View Deal
           <ArrowRight class="h-3.5 w-3.5" />
         </Button>

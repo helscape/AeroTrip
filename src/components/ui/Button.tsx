@@ -1,10 +1,12 @@
 import type { ComponentChildren } from "preact";
+import { LoaderCircle } from "lucide-preact";
+import { Link } from "./Link";
 
 export type ButtonVariant = "primary" | "secondary" | "outline" | "ghost" | "light";
 export type ButtonSize = "sm" | "md" | "lg";
 
 const BASE =
-  "inline-flex items-center justify-center gap-2 rounded-full font-semibold whitespace-nowrap transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-500 focus-visible:ring-offset-2";
+  "inline-flex items-center justify-center gap-2 rounded-full font-semibold whitespace-nowrap transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-500 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60";
 
 const VARIANTS: Record<ButtonVariant, string> = {
   primary: "bg-navy-900 text-white hover:bg-navy-800",
@@ -25,37 +27,53 @@ interface ButtonProps {
   children: ComponentChildren;
   variant?: ButtonVariant;
   size?: ButtonSize;
-  /** When provided the button renders as an anchor. */
+  /** Internal route — renders an SPA link when provided. */
   href?: string;
+  type?: "button" | "submit" | "reset";
+  disabled?: boolean;
+  loading?: boolean;
+  onClick?: (event: MouseEvent) => void;
   class?: string;
   "aria-label"?: string;
 }
 
-/**
- * Presentational button. Renders an <a> when `href` is set, otherwise a
- * <button type="button">. No click handlers by design — this is UI only.
- */
 export function Button({
   children,
   variant = "primary",
   size = "md",
   href,
+  type = "button",
+  disabled = false,
+  loading = false,
+  onClick,
   class: className = "",
   ...rest
 }: ButtonProps) {
   const classes = `${BASE} ${VARIANTS[variant]} ${SIZES[size]} ${className}`;
+  const content = (
+    <>
+      {loading ? <LoaderCircle class="h-4 w-4 animate-spin" /> : null}
+      {children}
+    </>
+  );
 
   if (href) {
     return (
-      <a href={href} class={classes} {...rest}>
-        {children}
-      </a>
+      <Link href={href} class={classes} {...rest}>
+        {content}
+      </Link>
     );
   }
 
   return (
-    <button type="button" class={classes} {...rest}>
-      {children}
+    <button
+      type={type}
+      disabled={disabled || loading}
+      onClick={onClick}
+      class={classes}
+      {...rest}
+    >
+      {content}
     </button>
   );
 }
