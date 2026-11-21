@@ -107,7 +107,7 @@ SQL
 
 ```bash
 cd server
-python3 -m venv .venv
+python3.12 -m venv .venv      # any Python 3.10+ works; run.sh auto-detects one
 .venv/bin/python -m pip install -r requirements.txt
 cp .env.example .env          # fill in the DATABASE_URL password + ADMIN_API_KEY
 .venv/bin/python seed.py      # create tables and load sample inventory
