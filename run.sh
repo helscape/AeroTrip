@@ -6,9 +6,10 @@
 #   ./run.sh --no-seed       # keep existing data, just start servers
 #   PORT=3002 WEB_PORT=5174 ./run.sh
 #
-# If server/.env is missing, the script provisions the MariaDB instance from
-# the Webserver compose stack and writes a fresh .env. Override its location
-# with WEBSERVER_COMPOSE_DIR=/path/to/stack.
+# MariaDB is NOT managed here: start it yourself (see the "Database
+# (manual setup)" section of README.md) and create server/.env from
+# server/.env.example first. This script only handles dependencies, seeding,
+# and starting the API + web dev servers.
 
 set -euo pipefail
 
@@ -20,7 +21,6 @@ fail() { printf '\nERROR: %s\n' "$*" >&2; exit 1; }
 
 command -v bun >/dev/null 2>&1      || fail "bun is required (https://bun.sh)"
 command -v python3 >/dev/null 2>&1  || fail "python3 is required"
-command -v docker >/dev/null 2>&1   || true
 
 API_PORT="${PORT:-3001}"
 WEB_PORT="${WEB_PORT:-5173}"
@@ -28,62 +28,11 @@ SEED=true
 [[ "${1:-}" == "--no-seed" ]] && SEED=false
 
 # ---------------------------------------------------------------------------
-# 1. Database environment
+# 1. Configuration (the database itself is started manually, before this script)
 # ---------------------------------------------------------------------------
-provision_database() {
-  local compose_dir="${WEBSERVER_COMPOSE_DIR:-$HOME/Projects/Docker/Webserver}"
-  local env_file="$compose_dir/.env"
-  local compose_file="$compose_dir/docker-compose.yml"
-
-  [[ -f "$env_file" ]] || fail "Database env not found: $env_file (set WEBSERVER_COMPOSE_DIR)"
-  [[ -f "$compose_file" ]] || fail "Compose file not found: $compose_file"
-
-  set -a
-  # shellcheck disable=SC1090
-  . "$env_file"
-  set +a
-
-  : "${MARIADB_ROOT_PASSWORD:?set MARIADB_ROOT_PASSWORD in $env_file}"
-
-  local db_password
-  db_password="$(openssl rand -hex 18)"
-
-  log "Starting MariaDB container"
-  docker compose -f "$compose_file" up -d mariadb
-
-  log "Waiting for MariaDB to become healthy"
-  for _ in $(seq 1 30); do
-    if docker exec webserver-mariadb-1 healthcheck.sh --connect --innodb_initialized >/dev/null 2>&1; then
-      break
-    fi
-    sleep 2
-  done
-
-  log "Creating aerotrip databases and user"
-  docker exec -i webserver-mariadb-1 mariadb -uroot -p"$MARIADB_ROOT_PASSWORD" <<SQL
-CREATE DATABASE IF NOT EXISTS aerotrip CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
-CREATE DATABASE IF NOT EXISTS aerotrip_test CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
-CREATE USER IF NOT EXISTS 'aerotrip'@'%' IDENTIFIED BY '$db_password';
-GRANT ALL PRIVILEGES ON aerotrip.* TO 'aerotrip'@'%';
-GRANT ALL PRIVILEGES ON aerotrip_test.* TO 'aerotrip'@'%';
-FLUSH PRIVILEGES;
-SQL
-
-  cat > server/.env <<EOF
-DATABASE_URL=mysql+pymysql://aerotrip:${db_password}@localhost:3306/aerotrip?charset=utf8mb4
-TEST_DATABASE_URL=mysql+pymysql://aerotrip:${db_password}@localhost:3306/aerotrip_test?charset=utf8mb4
-ADMIN_API_KEY=$(openssl rand -hex 24)
-JWT_SECRET=$(openssl rand -hex 32)
-JWT_TTL_HOURS=168
-CORS_ORIGINS=http://localhost:${WEB_PORT},http://127.0.0.1:${WEB_PORT}
-PORT=${API_PORT}
-EOF
-  chmod 600 server/.env
-  log "Wrote server/.env"
-}
-
-if [[ ! -f server/.env ]] || grep -q '<password>' server/.env; then
-  provision_database
+[[ -f server/.env ]] || fail "server/.env is missing — copy server/.env.example and fill in the DB credentials"
+if grep -q '<password>' server/.env; then
+  fail "server/.env still contains <password> placeholders — fill in the real DB password"
 fi
 
 # ---------------------------------------------------------------------------

@@ -42,7 +42,7 @@ Design proposal: [`future_plan.md`](./future_plan.md).
 | Auth | **JWT** (bcrypt password hashes, HS256 bearer tokens) |
 
 The plan specified SQLite; this implementation uses the MariaDB instance from
-the existing Docker Compose stack at `~/Projects/Docker/Webserver` instead.
+the existing Docker Compose stack at `~/Project/Docker/Webserver` instead.
 Two databases were created there: `aerotrip` (app) and `aerotrip_test` (pytest),
 plus a dedicated `aerotrip` user. There is no cache, queue or extra service.
 
@@ -52,13 +52,16 @@ plus a dedicated `aerotrip` user. There is no cache, queue or extra service.
 
 ### Quick start (one command)
 
+Start MariaDB yourself and make sure `server/.env` is configured first (see
+[Database](#1-database-manual-setup) and [Environment variables](#environment-variables)).
+`./run.sh` does not start or provision the database.
+
 ```bash
 ./run.sh                 # seed the DB, then start API + web dev server
 ```
 
-The script provisions MariaDB if `server/.env` is missing, installs missing
-dependencies, seeds the database, and starts both servers in the foreground.
-Press Ctrl+C to stop both. Variants:
+The script installs missing dependencies, seeds the database, and starts both
+servers in the foreground. Press Ctrl+C to stop both. Variants:
 
 ```bash
 ./run.sh --no-seed             # keep existing data
@@ -81,7 +84,7 @@ The admin account can call `/api/admin/*` with just its Bearer token (the
 MariaDB must be running. In the Webserver compose stack:
 
 ```bash
-cd ~/Projects/Docker/Webserver
+cd ~/Project/Docker/Webserver
 docker compose up -d mariadb
 docker compose ps        # health check should report "healthy"
 ```
@@ -138,7 +141,7 @@ From the repo root you can also use:
 
 All backend configuration lives in **`server/.env`**, loaded by `pydantic-settings`.
 It is gitignored and must never be committed. Copy the template and fill in real
-values (or let `./run.sh` generate it — see Quick start):
+values before running `./run.sh`:
 
 ```bash
 cd server
@@ -175,12 +178,12 @@ PORT=3001
 ```
 
 **Where the DB credentials come from:** the MariaDB instance is defined in
-`~/Projects/Docker/Webserver/docker-compose.yml`; its root password is in that
+`~/Project/Docker/Webserver/docker-compose.yml`; its root password is in that
 stack's `.env`. The `aerotrip` user/database are created by the SQL in the
-Database section above (or automatically by `./run.sh`, which generates a random
-password and writes `server/.env`). Use the *app user* credentials in
-`DATABASE_URL`, not the root password. The root password is only needed once to
-create the database and grant privileges.
+Database section above. Use the *app user* credentials in `DATABASE_URL`, not the
+root password. The root password is only needed once to create the database and
+grant privileges. Start the stack manually before running `./run.sh`; the script
+expects the database to already be up.
 
 ### Frontend — `.env` (optional, production only)
 
